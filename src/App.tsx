@@ -1,26 +1,48 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { useEffect, useRef, useState } from 'react';
 
-function App() {
+import * as esbuild from 'esbuild-wasm';
+import { unpkgPathPlugin } from './plugins/unpkg-path-plugin';
+
+const App = () => {
+  const ref = useRef<esbuild.Service>();
+  const [ input, setInput ] = useState('');
+  const [ code, setCode ] = useState('');
+
+  const handleOnClickSubmit = async () => {
+    if (!ref.current) {
+      return;
+    }
+
+    // const result = await ref.current.transform(input, {
+    //   loader: 'jsx',
+    //   target: 'es2015'
+    // });
+
+    // setCode(result.code);
+
+    await ref.current.build({
+      plugins: [ unpkgPathPlugin() ]
+    })
+  };
+
+  const startService: any = async () => {
+    ref.current = await esbuild.startService({
+      worker: true,
+      wasmURL: '/esbuild.wasm'
+    });
+  };
+
+  useEffect(() => {
+    startService();
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <textarea onChange={ e => setInput(e.target.value) }></textarea>
+      <button onClick={handleOnClickSubmit}>Submit</button>
+      <pre>{code}</pre>
     </div>
   );
-}
+};
 
 export default App;
